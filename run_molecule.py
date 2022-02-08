@@ -5,7 +5,7 @@ from baselines.common import set_global_seeds
 from baselines import logger
 from tensorboardX import SummaryWriter
 import os
-import tensorflow as tf
+import tensorflow.compat.v1 as tf
 
 import gym
 from gym_molecule.envs.molecule import GraphEnv
@@ -112,6 +112,7 @@ def molecule_arg_parser():
     return parser
 
 def main():
+    tf.disable_v2_behavior()
     args = molecule_arg_parser().parse_args()
     print(args)
     args.name_full = args.env + '_' + args.dataset + '_' + args.name
