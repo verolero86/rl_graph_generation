@@ -19,6 +19,8 @@ import csv
 from contextlib import contextmanager
 import sys, os
 
+from adtgpu.get_reward import get_dock_score
+
 # block std out
 @contextmanager
 def nostdout():
@@ -305,6 +307,8 @@ class MoleculeEnv(gym.Env):
                         # reward_final += reward_target_mw(final_mol,target=self.reward_target)
                         reward_final += reward_target_new(final_mol, rdMolDescriptors.CalcExactMolWt,x_start=self.reward_target, x_mid=self.reward_target+25)
 
+                    elif self.reward_type == 'docking_score':
+                        reward_final += get_dock_score(final_mol)
 
                     elif self.reward_type == 'gan':
                         reward_final = 0
