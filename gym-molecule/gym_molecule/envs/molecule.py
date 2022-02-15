@@ -19,7 +19,7 @@ import csv
 from contextlib import contextmanager
 import sys, os
 
-from adtgpu.get_reward import get_dock_score
+from reward.adtgpu.get_reward import get_dock_score
 
 # block std out
 @contextmanager
@@ -258,6 +258,7 @@ class MoleculeEnv(gym.Env):
             reward_qed = 0
             reward_sa = 0
             reward_logp = 0
+            reward_docking_score = 0
             reward_final = 0
             flag_steric_strain_filter = True
             flag_zinc_molecule_filter = True
@@ -278,17 +279,27 @@ class MoleculeEnv(gym.Env):
                     reward_valid -= 1
                     flag_zinc_molecule_filter = False
 
+                print(f"reward_type = {self.reward_type}")
 
                 # property rewards
                 try:
                     # 1. QED reward. Can have values [0, 1]. Higher the better
                     reward_qed += qed(final_mol)*self.qed_ratio
+                    print(f"reward_qed = {reward_qed}")
                     # 2. Synthetic accessibility reward. Values naively normalized to [0, 1]. Higher the better
                     sa = -1 * calculateScore(final_mol)
                     reward_sa += (sa + 10) / (10 - 1) * self.sa_ratio
+                    print(f"reward_sa = {reward_sa}")
                     # 3. Logp reward. Higher the better
                     # reward_logp += MolLogP(self.mol)/10 * self.logp_ratio
                     reward_logp += reward_penalized_log_p(final_mol) * self.logp_ratio
+                    print(f"reward_logp = {reward_logp}")
+                    # 4. Docking score from AutoDock-GPU
+                    dock_score = get_dock_score(final_mol)
+                    print(f"dock_score = {dock_score}")
+                    reward_docking_score += dock_score[0]
+                    print(f"reward_docking_score = {reward_docking_score}")
+
                     if self.reward_type == 'logppen':
                         reward_final += reward_penalized_log_p(final_mol)/3
                     elif self.reward_type == 'logp_target':
@@ -308,18 +319,20 @@ class MoleculeEnv(gym.Env):
                         reward_final += reward_target_new(final_mol, rdMolDescriptors.CalcExactMolWt,x_start=self.reward_target, x_mid=self.reward_target+25)
 
                     elif self.reward_type == 'docking_score':
-                        reward_final += get_dock_score(final_mol)
+                        reward_final += reward_docking_score
+                        print(f"docking_score = {reward_docking_score}")
 
                     elif self.reward_type == 'gan':
                         reward_final = 0
                     else:
-                        print('reward error!')
+                        print('reward error - else')
+                        print('reward type =',self.reward_type)
                         reward_final = 0
 
 
 
                 except: # if any property reward error, reset all
-                    print('reward error')
+                    print('reward error - try except failed')
 
             new = True # end of episode
             if self.force_final:
