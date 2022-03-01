@@ -18,7 +18,9 @@ from rdkit.Chem import AllChem
 
 # Andes system at OLCF
 OBABEL_PATH = "/gpfs/alpine/syb105/world-shared/vmv/gcpn/MolDQN-pytorch/openbabel_install/openbabel-openbabel-2-4-0/andes_build/bin/obabel"
-ADT_PATH = "/gpfs/alpine/syb105/world-shared/vmv/gcpn/MolDQN-pytorch/autodockgpu_install/AutoDock-GPU-1.5.2/bin/autodock_gpu_64wi"
+#ADT_PATH = "/gpfs/alpine/syb105/world-shared/vmv/gcpn/MolDQN-pytorch/autodockgpu_install/AutoDock-GPU-1.5.2/bin/autodock_gpu_64wi"
+ADT_PATH = "/ccs/proj/syb105/sw/andes/autodockGPU/1.4/bin/autodock_gpu_64wi"
+
 ########### receptor files ###########
 
 # NSP15, site A3H
@@ -88,12 +90,23 @@ def get_dock_score(states, args=None):
                 #Prepare SMILES for conversion, convert to pdb
                 #my_mol = Chem.MolFromSmiles(smile)
                 my_mol_with_H=Chem.AddHs(my_mol)
-                AllChem.EmbedMolecule(my_mol_with_H)
-                AllChem.MMFFOptimizeMolecule(my_mol_with_H)
+                print(my_mol_with_H)
+                ret = AllChem.EmbedMolecule(my_mol_with_H)
+                if (ret != 0):
+                    raise Exception(f'AllChem.EmbdeMolecule returned {ret}')
+                #print(my_mol_with_H)
+                #print(ret)
+                ret = AllChem.MMFFOptimizeMolecule(my_mol_with_H)
+                if (ret != 0):
+                    raise Exception(f'AllChem.MMFFOptimizeMolecule returned {ret}')
+                #print(my_mol_with_H)
+                #print(ret)
                 my_embedded_mol = Chem.RemoveHs(my_mol_with_H)
+                #print(my_embedded_mol)
                 #print("Printing MolToPDBBlock:\n".format(Chem.MolToPDBBlock(my_embedded_mol))
-            except:
+            except Exception as e:
                 print("other SMILES error: {}".format(smile))
+                print(e)
                 VALID=False   
  
         if(VALID): 
